@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<script src="https://pixijs.download/release/pixi.js"></script>
+		<title>PixiJS</title>
+	</head>
+	<body>
+		<canvas></canvas>
+		<div>
+			<div>
+				<div></div>
+			</div>
+		</div>
+
+		<script>
+			const canvas = document.querySelector("canvas");
+			const canvasWidth = 850;
+			const canvasHeight = 550;
+			const app = new PIXI.Application({
+				view: canvas,
+				width: canvasWidth,
+				height: canvasHeight,
+				
+				backgroundColor: 0X348ceb
+			});
+
+			let health = 3;
+			let score = 0;
+			let level = 1;
+		
+
+			const backGround = new PIXI.Container();
+			const backSprite = PIXI.Sprite.from("resources/back.jpeg");
+			backSprite.position.x = 0;
+			backSprite.position.y = 0;
+			backGround.addChild(backSprite);
+			app.stage.addChild(backGround);
+
+			function createGameScene(gameScene, _speed, _enemyCount, _speedSpawn, _level) {
+				let isMouseFlag = false;
+				let lastBulletSpawnTime = 0;
+				let isHit = false;
+				const spawnSpeed = _speedSpawn;
+				const keysMaps = {};
+				const speed = _speed;
+				const bulletSpeed = 15;
+				const enemyCount = _enemyCount;
+				const hitTime = 500;
+				let lastHitTime = 0;
+
+				
+				const players = new PIXI.Container();
+				gameScene.addChild(players);
+
+				const bullets = new PIXI.Container();
+				gameScene.addChild(bullets);
+
+				const enemies = new PIXI.Container();
+				gameScene.addChild(enemies);
+
+				const sprite = PIXI.Sprite.from("resources/player.png");
+				sprite.position.x = 250;
+				sprite.position.y = 450;
+				players.addChild(sprite);
+
+				const styleScore = new PIXI.TextStyle({ fill: "#2a5242", fontSize: 16 });
+				const scoreText = new PIXI.Text(`Score: ${score}`, styleScore);
+				scoreText.scale.x = 2;
+				scoreText.position.x = 5;
+				scoreText.position.y = 5;
+				gameScene.addChild(scoreText);	
+
+
+				const styleLevel = new PIXI.TextStyle({ fill: "#2a5242", fontSize: 16 });
+				const levelText = new PIXI.Text(`Level: ${_level}`, styleLevel);
+				levelText.scale.x = 2;
+				levelText.position.x = 250;
+				levelText.position.y = 5;
+				gameScene.addChild(levelText);
+
+				const styleHealth = new PIXI.TextStyle({ fill: "#de2d1d", fontSize: 16 });
+
+				const healthText = new PIXI.Text(`Health: ${health}`, styleHealth);
+				healthText.scale.x = 2;
+				healthText.position.x = 5;
+				healthText.position.y = 20;
+				gameScene.addChild(healthText);
+
+				for (let index = 0; index < enemyCount; index++) {
+					const enemy = PIXI.Sprite.from("resources/enemy.png");
+					enemy.position.x = index * 60;
+					enemy.position.y = index * Math.floor(Math.random() * 25);
+					enemies.addChild(enemy);
+				}
+
+				document.onkeydown = (event) => {
+					keysMaps[event.code] = true;
+				};
+
+				document.onkeyup = (event) => {
+					keysMaps[event.code] = false;
+				};
+
+				document.onmousedown = (event) => {
+					isMouseFlag = true;
+				};
+
+				document.onmouseup = (event) => {
+					isMouseFlag = false;
+				};
+
+				return (delay) => {
+					if (keysMaps['ArrowLeft']) {
+						sprite.position.x -= delay * speed;
+						if(sprite.position.x < 0){
+							sprite.position.x = 0;
+						}
+					}
+					if (keysMaps['ArrowRight']) {
+						sprite.position.x += delay * speed;
+						if(sprite.position.x > canvasWidth - 30){
+							sprite.position.x = canvasWidth - 30;
+						}
+					}
+					if (keysMaps['ArrowUp']) {
+						sprite.position.y -= delay * speed;	
+						if(sprite.position.y < 0){
+							sprite.position.y = 0;
+						}
+					}
+					if (keysMaps['ArrowDown']) {
+						sprite.position.y += delay * speed;
+						if(sprite.position.y > canvasHeight - 30){
+							sprite.position.y = canvasHeight - 30;
+						}
+					}
+
+					if (isMouseFlag) {
+						const currentTime = Date.now();
+
+						if ((currentTime - lastBulletSpawnTime) > spawnSpeed) {
+
+							const bullet = PIXI.Sprite.from("resources/bullet.png");
+							bullet.position.x = sprite.position.x;
+							bullet.position.y = sprite.position.y;
+							bullet.scale.x = 0.25;
+							bullet.scale.y = 0.25;
+							bullets.addChild(bullet);
+
+							lastBulletSpawnTime = currentTime;
+						}
+					}
+
+					if(isHit){
+						const currentTime = Date.now();
+							if ((currentTime - lastHitTime) > hitTime) {
+								sprite.alpha = 1;
+								isHit = false;
+								lastHitTime = 0;
+							}
+					}
+					for (let index = 0; index < bullets.children.length; index++) {
+						const bullet = bullets.children[index];
+						bullet.position.y -= bulletSpeed * delay;
+
+						if (bullet.position.y < 0) {
+							bullets.removeChild(bullet);
+							continue;
+						}
+
+						for (const enemy of enemies.children) {
+							if (enemy.getBounds().intersects(bullet.getBounds())) {
+								enemies.removeChild(enemy);
+								score++;
+								console.log(`Score: ${score}`);
+								scoreText.text  =`Score: ${score}`;
+								if(enemies.children.length === 0 && _level === 5 && health !== 0){
+									state="win";
+									app.stage.removeChild(gameScene);
+
+									app.stage.addChild(winScene);
+								}else if(enemies.children.length === 0 && health !== 0){
+									app.stage.removeChild(gameScene);
+									gameScene = new PIXI.Container();
+									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1);
+									app.stage.addChild(gameScene);	
+								}
+							}
+						}
+					}
+
+					for (const enemy of enemies.children) {
+						enemy.position.y += 2 * delay;
+						if(enemy.position.y > (canvasHeight + 20)){
+							enemy.position.x = Math.floor(Math.random() * 550);
+							enemy.position.y = Math.floor(Math.random() * 25);
+						}
+						if (enemy.getBounds().intersects(sprite.getBounds())) {
+								health--;
+								enemies.removeChild(enemy);
+								sprite.alpha = 0.5;
+								isHit = true;
+								lastHitTime = Date.now();
+								healthText.text = `Health: ${health}`;
+								if(health == 0){
+									app.stage.removeChild(gameScene);
+									const gameOverScene = new PIXI.Container();
+
+									app.stage.addChild(gameOverScene);
+									state="lost";
+									console.log(score);
+									console.log(_level);
+									createGameOverScene(gameOverScene, score, _level)
+								}
+								else if(enemies.children.length === 0 && _level === 5){
+									app.stage.removeChild(gameScene);
+									app.stage.addChild(winScene);
+									state="win";
+									showWinScene;
+								}else if(enemies.children.length === 0){
+									app.stage.removeChild(gameScene);
+									gameScene = new PIXI.Container();
+									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1);
+									app.stage.addChild(gameScene);	
+								}
+						}
+					}
+				};
+			}
+
+			function createWinScene(winScene){
+				const style = new PIXI.TextStyle({ fill: "#00000", fontSize: 20 });
+				const scoreText = new PIXI.Text(`Congrats! You Win! Score: ${score}`);
+				scoreText.scale.x = 2;
+				scoreText.position.x = 35;
+				scoreText.position.y = 250;
+				winScene.addChild(scoreText);	
+			}
+			function createGameOverScene(gameOverScene, _score, _level){
+				console.log(score);
+				console.log(_level);
+				const style = new PIXI.TextStyle({ fill: "#00000", fontSize: 20 });
+				const scoreText = new PIXI.Text(`Game Over. Last level: ${_level}. Score ${_score}`, style);
+
+				scoreText.scale.x = 2;
+				scoreText.position.x = 10;
+				scoreText.position.y = 250;
+				gameOverScene.addChild(scoreText);	
+			}
+			
+			const winScene = new PIXI.Container();
+			const showWinScene = createWinScene(winScene);
+
+			//const showGameOverScene = createGameOverScene(gameOverScene);
+			let gameScene = new PIXI.Container();
+			let updateScene = createGameScene(gameScene, 5, 10, 200, level);
+
+			let state = "mainMenu";
+
+			const mainScene = new PIXI.Container();
+
+			const style = new PIXI.TextStyle({ fill: "#ffffff", fontSize: 28 });
+			const field = new PIXI.Text("Start Game", style);
+			field.interactive = true;
+			field.buttonMode = true;
+			field.scale.x = 2;
+			field.position.x = 250;
+			field.position.y = 250;
+			mainScene.addChild(field);
+			field.on('click', () => {
+				state = "game";
+				app.stage.removeChild(mainScene);
+				app.stage.addChild(gameScene);
+			});
+
+			app.stage.addChild(mainScene);
+
+			app.ticker.add(
+				(delay) => {
+					if (state === "game") {
+						updateScene(delay);
+					}else if(state === "win"){
+						//updateScene(delay);
+					}else if(state==="lost"){
+						
+
+					}
+				}
+			);
+
+
+			
+		</script>
+	</body>
+</html>
