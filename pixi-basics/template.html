@@ -39,7 +39,7 @@
 
 
 			//function that creates game scene and takes paramters in order to set level difficulties
-			function createGameScene(gameScene, _speed, _enemyCount, _speedSpawn, _level) {
+			function createGameScene(gameScene, _speed, _enemyCount, _speedSpawn, _level, spriteX=250, spriteY=450) {
 				//initialize variables with default or parameter values
 				let isMouseFlag = false;
 				let lastBulletSpawnTime = 0;
@@ -64,8 +64,8 @@
 
 				//creating player sprite and setting initial position
 				const sprite = PIXI.Sprite.from("resources/player.png");
-				sprite.position.x = 250;
-				sprite.position.y = 450;
+				sprite.position.x = spriteX;
+				sprite.position.y = spriteY;
 				players.addChild(sprite);
 
 
@@ -217,7 +217,7 @@
 								else if(enemies.children.length === 0 && health !== 0){
 									app.stage.removeChild(gameScene);
 									gameScene = new PIXI.Container();
-									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1);
+									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1, sprite.position.x, sprite.position.y);
 									app.stage.addChild(gameScene);	
 								}
 							}
@@ -262,7 +262,7 @@
 								else if(enemies.children.length === 0){
 									app.stage.removeChild(gameScene);
 									gameScene = new PIXI.Container();
-									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1);
+									updateScene = createGameScene(gameScene, _speed+=2, _enemyCount+=5, _speedSpawn += 25, _level+=1, sprite.position.x, sprite.position.y);
 									app.stage.addChild(gameScene);	
 								}
 						}
