@@ -202,6 +202,10 @@
 								enemies.removeChild(enemy);
 								bullets.removeChild(bullet);
 								score++;
+								if(score % 20 == 0){
+									health++;
+									healthText.text = `Health: ${health}`;
+								}
 								console.log(`Score: ${score}`);
 								scoreText.text  =`Score: ${score}`;
 
@@ -274,7 +278,7 @@
 			//creates win scene
 			function createWinScene(winScene, _score){
 				const style = new PIXI.TextStyle({ fill: "#fff126", fontSize: 20 });
-				const scoreText = new PIXI.Text(`Congrats! You Win! Score: ${_score}`);
+				const scoreText = new PIXI.Text(`Congrats! You Win! Score: ${_score}`, style);
 				scoreText.scale.x = 2;
 				scoreText.position.x = 35;
 				scoreText.position.y = 250;
