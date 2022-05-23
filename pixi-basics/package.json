@@ -1,0 +1,21 @@
+{
+  "name": "webpack-basics",
+  "version": "1.0.0",
+  "description": "start",
+  "main": "gamePlay.js",
+  "scripts": {
+    "dev": "webpack",
+    "watch": "webpakc --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "copy-webpack-plugin": "^11.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
+  },
+  "dependencies": {
+    "pixi.js": "^6.3.2"
+  }
+}
