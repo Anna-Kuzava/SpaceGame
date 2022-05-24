@@ -13,6 +13,7 @@ const canvas = document.querySelector("canvas");
 				height: canvasHeight,
 			});
 
+		
 			//creating textures for sprites
 			const playerTexture = PIXI.Texture.from('./resources/player.png');
 			const enemyTexture =  PIXI.Texture.from('./resources/enemy.png');
@@ -31,19 +32,24 @@ const canvas = document.querySelector("canvas");
 			app.stage.addChild(backGround);
 
 			//function that creates game scene and takes paramters in order to set level difficulties
-			function createGameScene(gameScene, _enemyCount, _level, spriteX=250, spriteY=450) {
+			function createGameScene(gameScene:PIXI.Container, _enemyCount:number, _level:number, weaponLevel = 1, spriteX=250, spriteY=450) {
 				//initialize variables with default or parameter values
 				let isMouseFlag = false;
 				const keysMaps = {};
 				const enemyCount = _enemyCount;
+				const weaponTimeSpawn = 7000;
+				let start = Date.now();
 
 				//creating different layers for player, enemies and bullets and adding then to the scene
 				const players = new PIXI.Container();
 				gameScene.addChild(players);
+				
+				const weaponContainer = new PIXI.Container();
+				gameScene.addChild(weaponContainer);
 
 				const bullets = new PIXI.Container();
 				gameScene.addChild(bullets);
-
+				
 				const bossBullets = new PIXI.Container();
 				const mainBossContainer = new PIXI.Container();
 				if(_level === 5){
@@ -56,6 +62,7 @@ const canvas = document.querySelector("canvas");
 
 				//creating player sprite and setting initial position
 				const sprite = new Player(spriteX, spriteY, playerTexture);
+				sprite.weaponLevel = weaponLevel;
 				players.addChild(sprite);
 
 				//creating background for the text
@@ -67,7 +74,7 @@ const canvas = document.querySelector("canvas");
 				gameScene.addChild(txtBG);	
 
 				//text field for score
-				const styleScore = new PIXI.TextStyle({ fill: "#4b69fa", fontSize: 16, backgroundColor: "#000000"});
+				const styleScore = new PIXI.TextStyle({ fill: "#4b69fa", fontSize: 16 });
 				const scoreText = new TextField(`Score: ${score}`, styleScore, 5,5);
 				gameScene.addChild( scoreText);	
 
@@ -110,7 +117,9 @@ const canvas = document.querySelector("canvas");
 				};
 
 				
-				return (delay) => {
+				let weapon:PIXI.Sprite|null = null; 
+				
+				return (delay:number) => {
 					//checks if any keys for movement were pressed and if so moves the sprite 
 					if (keysMaps['ArrowLeft']) {
 						sprite.moveLeft(delay);
@@ -125,16 +134,32 @@ const canvas = document.querySelector("canvas");
 						sprite.moveDown(delay, canvasHeight);
 					}
 
+
 					//checks if the mouse key is presed and if can, shoots a bullet
 					if (isMouseFlag) {
-						if (sprite.canShoot()) {
+						let canShoot = sprite.canShoot();
+						if ((canShoot && sprite.weaponLevel === 1)) {
 							const bullet = new Bullet(sprite.position.x, sprite.position.y, bulletTexture, 15, 0.25);
 							bullets.addChild(bullet);
+						}
+						else if((canShoot && sprite.weaponLevel === 2)){
+							const bullet = new Bullet(sprite.position.x-5, sprite.position.y, bulletTexture, 15, 0.25);
+							bullets.addChild(bullet);
+							const bullet2 = new Bullet(sprite.position.x+5, sprite.position.y, bulletTexture, 15, 0.25);
+							bullets.addChild(bullet2);
+						}
+						else if(canShoot && sprite.weaponLevel >= 3){
+							const bullet = new Bullet(sprite.position.x-7, sprite.position.y, bulletTexture, 15, 0.25);
+							bullets.addChild(bullet);
+							const bullet2 = new Bullet(sprite.position.x+7, sprite.position.y, bulletTexture, 15, 0.25);
+							bullets.addChild(bullet2);
+							const bullet3 = new Bullet(sprite.position.x, sprite.position.y, bulletTexture, 15, 0.25);
+							bullets.addChild(bullet3);
 						}
 					}
 
 					//moves the bullet, checks for being outside the boundaries and checks if it hit anything
-					for (const bullet of bullets.children) {
+					for (const bullet of bullets.children as Array<Bullet>) {
 						bullet.moveUp(delay);
 
 						//if bullet outside of the canvas, remove it
@@ -143,7 +168,7 @@ const canvas = document.querySelector("canvas");
 							continue;
 						}
 
-						for (const enemy of enemies.children) {
+						for (const enemy of enemies.children as Array<Enemy>) {
 							//if the bullet hit the enemy, remove the enemy
 							if (enemy.getBounds().intersects(bullet.getBounds())) {
 								enemies.removeChild(enemy);
@@ -160,7 +185,7 @@ const canvas = document.querySelector("canvas");
 								}
 								//check for next level condition
 								else if(enemies.children.length === 0 && sprite.health !== 0){
-									loadNextLevel(gameScene,  _enemyCount, _level, sprite.position.x, sprite.position.y);
+									loadNextLevel(gameScene,  _enemyCount, _level, sprite.position.x, sprite.position.y, sprite.weaponLevel);
 								}
 							}
 						}
@@ -192,7 +217,7 @@ const canvas = document.querySelector("canvas");
 							bossBullets.addChild(bullet2);
 						}
 						
-						for(const bullet of bossBullets.children){
+						for(const bullet of bossBullets.children as Array<Bullet>){
 							bullet.moveDown(delay);
 							if(bullet.position.y > canvasHeight){
 								bossBullets.removeChild(bullet);
@@ -209,7 +234,7 @@ const canvas = document.querySelector("canvas");
 					}
 
 					//moves enemies nad resets postion if they are outside the boundaries
-					for (const enemy of enemies.children) {
+					for (const enemy of enemies.children as Array<Enemy>) {
 						enemy.moveDown(delay);
 						//resets position
 						if(enemy.position.y > (canvasHeight + 20)){
@@ -231,22 +256,47 @@ const canvas = document.querySelector("canvas");
 								}
 								//checks for next level condition
 								else if(enemies.children.length === 0){
-									loadNextLevel(gameScene,  _enemyCount, _level, sprite.position.x, sprite.position.y);
+									loadNextLevel(gameScene,  _enemyCount, _level, sprite.position.x, sprite.position.y, sprite.weaponLevel);
 								}
+						}
+					}
+
+
+					let current = Date.now();
+					
+					if(current - start > weaponTimeSpawn){
+						weapon = PIXI.Sprite.from("resources/fire.png");
+						weapon.position.x = Math.floor(Math.random() * 800);
+						weapon.width = 40;
+						weapon.height = 40;
+						weapon.position.y = 0;
+						start = current;
+						weaponContainer.addChild(weapon);
+					}
+					if(weapon !== null){
+						weapon.position.y += 3;
+						if(weapon.position.y > canvasHeight){
+							weaponContainer.removeChild(weapon);
+							weapon = null;
+						}
+						else if(weapon.getBounds().intersects(sprite.getBounds())){
+							weaponContainer.removeChild(weapon);
+							sprite.increaseWeapon();
+							weapon = null;
 						}
 					}
 				};
 			}
 
-			function gameOver(score, _level){
+			function gameOver(score:number, level:number){
 				app.stage.removeChild(gameScene);
 				const gameOverScene = new PIXI.Container();
 				app.stage.addChild(gameOverScene);
 				state="lost";
-				createGameOverScene(gameOverScene, score, _level)
+				createGameOverScene(gameOverScene, score, level)
 			}
 
-			function win(score){
+			function win(score:number){
 				app.stage.removeChild(gameScene);
 				state="win";
 				const winScene = new PIXI.Container();
@@ -254,16 +304,16 @@ const canvas = document.querySelector("canvas");
 				createWinScene(winScene, score);
 			}
 
-			function loadNextLevel(gameScene, enemyCount, level, x, y){
+			function loadNextLevel(gameScene:PIXI.Container, enemyCount:number, level:number, x:number, y:number, weaponLevel:number){
 				app.stage.removeChild(gameScene);
 				gameScene = new PIXI.Container();
-				updateScene = createGameScene(gameScene, enemyCount+=5,  level+=1, x, y);
+				updateScene = createGameScene(gameScene, enemyCount+=5,  level+=1,weaponLevel, x, y);
 				app.stage.addChild(gameScene);	
 			}
 			//creates win scene
-			function createWinScene(winScene, _score){
+			function createWinScene(winScene:PIXI.Container, score:number){
 				const style = new PIXI.TextStyle({ fill: "#fff126", fontSize: 20 });
-				const scoreText = new PIXI.Text(`Congrats! You Win! Score: ${_score}`, style);
+				const scoreText = new PIXI.Text(`Congrats! You Win! Score: ${score}`, style);
 				scoreText.scale.x = 2;
 				scoreText.position.x = 35;
 				scoreText.position.y = 250;
@@ -271,11 +321,9 @@ const canvas = document.querySelector("canvas");
 			}
 
 			//creates lose scene
-			function createGameOverScene(gameOverScene, _score, _level){
-				console.log(score);
-				console.log(_level);
+			function createGameOverScene(gameOverScene:PIXI.Container, score:number, level:number){
 				const style = new PIXI.TextStyle({ fill: "#fff126", fontSize: 20 });
-				const scoreText = new PIXI.Text(`Game Over. Last level: ${_level}. Score ${_score}`, style);
+				const scoreText = new PIXI.Text(`Game Over. Last level: ${level}. Score ${score}`, style);
 				scoreText.scale.x = 2;
 				scoreText.position.x = 100;
 				scoreText.position.y = 250;
@@ -292,7 +340,7 @@ const canvas = document.querySelector("canvas");
 			let state = "mainMenu";
 			const mainScene = new PIXI.Container();
 			const style = new PIXI.TextStyle({ fill: "#fff126", fontSize: 28 });
-			const field = new PIXI.Text("Start Game", style);
+			const field:PIXI.Text = new PIXI.Text("Start Game", style);
 			field.interactive = true;
 			field.buttonMode = true;
 			field.scale.x = 2;

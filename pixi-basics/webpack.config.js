@@ -3,7 +3,7 @@ const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin")
 
 module.exports = {
-    entry: "./src/index.js",
+    entry: "./src/index.ts",
     mode: "development",
     devtool: "source-map",
     output: {
@@ -20,5 +20,18 @@ module.exports = {
                 to:path.resolve(__dirname, "dist", "resources")
             }]
         })
-    ]
+    ],
+    module: {
+        rules: [
+          {
+            test: /\.tsx?$/,
+            use: 'ts-loader',
+            exclude: /node_modules/,
+          },
+        ],
+      },
+      resolve: {
+        extensions: ['.tsx', '.ts', '.js'],
+      },
+    
 };

@@ -1,7 +1,8 @@
 import * as PIXI from 'pixi.js';
 
 export class Bullet extends PIXI.Sprite{
-    constructor(x, y, texture, speed, scale){
+    speed:number;
+    constructor(x:number, y:number, texture:PIXI.Texture, speed:number, scale:number){
         super(texture);
         this.position.x = x;
         this.position.y = y;
@@ -10,19 +11,19 @@ export class Bullet extends PIXI.Sprite{
         this.scale.y = scale;
     }
 
-    moveLeft(delay){
+    moveLeft(delay:number){
         this.position.x -= delay * this.speed;
     }
 
-    moveRight(delay){
+    moveRight(delay:number){
         this.position.x += delay* this.speed;
     }
 
-    moveUp(delay){
+    moveUp(delay:number){
         this.position.y -=  delay*this.speed;
     }
 
-    moveDown(delay){
+    moveDown(delay:number){
         this.position.y +=  delay*this.speed;
     }
     

@@ -1,31 +1,35 @@
 import * as PIXI from 'pixi.js';
 
 export class Enemy extends PIXI.Sprite{
-    constructor(x, y, texture){
+    speed:number;
+    constructor(x:number, y, texture){
         super(texture);
         this.position.x = x;
         this.position.y = y;
         this.speed = 2;
     }
 
-    moveLeft(delay){
+    moveLeft(delay:number){
         this.position.x -= delay * this.speed;
     }
 
-    moveRight(delay){
+    moveRight(delay:number){
         this.position.x += delay* this.speed;
     }
 
-    moveUp(delay){
+    moveUp(delay:number){
         this.position.y -=  delay*this.speed;
     }
 
-    moveDown(delay){
+    moveDown(delay:number){
         this.position.y +=  delay*this.speed;
     }
 }
 
 export class BossEnemy extends Enemy{
+    health:number;
+    shootingSpeed:number;
+    lastShot:number;
     constructor(x, y, texture, health = 10){
         super(x, y, texture);
         this.speed = 2;
@@ -38,19 +42,19 @@ export class BossEnemy extends Enemy{
         this.anchor.y = 0.5;
         this.angle = 180;
     }
-    moveLeft(delay){
+    moveLeft(delay:number){
         this.position.x -= delay * this.speed;
     }
 
-    moveRight(delay){
+    moveRight(delay:number){
         this.position.x += delay* this.speed;
     }
 
-    moveUp(delay){
+    moveUp(delay:number){
         this.position.y -=  delay*this.speed;
     }
 
-    moveDown(delay){
+    moveDown(delay:number){
         this.position.y +=  delay*this.speed;
     }
     
@@ -58,9 +62,9 @@ export class BossEnemy extends Enemy{
        this.health--;
     }
 
-    canShoot(){
+    canShoot():boolean{
         if(this.health > 0){
-        let currentTime = Date.now();
+        let currentTime:number = Date.now();
             if(currentTime - this.lastShot > this.shootingSpeed){
                 this.lastShot = currentTime;
                 return true;
